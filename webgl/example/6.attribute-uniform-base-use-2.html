@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+    html,
+    body {
+        height: 100%;
+        width: 100%;
+    }
+
+    #content {
+        background-color: beige;
+        width: 100%;
+        height: 100%;
+    }
+
+    #webgl {
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-style: solid;
+        border-width: 8px;
+        border-color: grey;
+    }
+</style>
+
+<body onload="main()">
+    <div id="content">
+        <canvas id="webgl" width="700" height="700"></canvas>
+        <h3>shader attribute+uniform基础使用：鼠标点击出绘制点，多个点，颜色随机</h3>
+        <h3>知识点：html canvas和WebGL坐标系转换</h3>
+    </div>
+    <script type="text/javascript">
+        var canvas;
+        var gl
+        var v_shader_source = [
+            "attribute vec4 a_Position;",
+            "void main() {",
+            "  gl_Position = a_Position;",
+            "  gl_PointSize = 30.0;",
+            "}"
+        ].join("\n");
+        var f_shader_source = [
+            "precision mediump float;", // 指定精度，不可缺省
+            "uniform vec4 u_FragColor;",
+            "void main() {",
+            "  gl_FragColor = u_FragColor;",
+            "}"
+        ].join("\n");
+        var positions = [];
+        var colors = [];
+
+        function main() {
+            canvas = document.getElementById('webgl');
+
+            canvas.addEventListener("mousedown", function (e) {
+                // html canvas坐标转换到WebGL坐标系
+                var x = e.offsetX;
+                var y = e.offsetY;
+                x = (x - canvas.height / 2) / (canvas.height / 2);
+                y = (canvas.width / 2 - y) / (canvas.width / 2);
+                positions.push({ x, y });
+
+                // rgb的范围是：0.0～1.0
+                var r = Math.random();
+                var g = Math.random();
+                var b = Math.random();
+                colors.push({ r, g, b });
+
+                for (var i = 0; i < positions.length; i++) {
+                    var position = positions[i];
+                    var color = colors[i];
+
+                    // 获取attribute变量存储位置
+                    var a_Position = gl.getAttribLocation(gl.program, "a_Position");
+                    // 将顶点数据，传递给attribute变量
+                    gl.vertexAttrib3f(a_Position, position.x, position.y, 0.0);
+
+                    // 获取uniform变量存储位置
+                    var u_FragColor = gl.getUniformLocation(gl.program, "u_FragColor");
+
+                    // 将颜色数据，传递给uniform变量
+                    gl.uniform4f(u_FragColor, color.r, color.g, color.b, 1.0);
+
+                    gl.drawArrays(gl.PPINTS, 0, 1)
+                }
+            });
+
+            gl = canvas.getContext('webgl');
+
+            //setup v-shader
+            var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vertexShader, v_shader_source);
+            gl.compileShader(vertexShader);
+
+            //setup f-shader
+            var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fragmentShader, f_shader_source);
+            gl.compileShader(fragmentShader);
+
+            if (!vertexShader || !fragmentShader) {
+                console.log('unable to create shader');
+                return null;
+            }
+
+            //setup program
+            var program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            gl.useProgram(program);
+            gl.program = program;
+        }
+    </script>
+</body>
+
+</html>

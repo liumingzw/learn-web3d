@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+    html,
+    body {
+        height: 100%;
+        width: 100%;
+    }
+
+    #content {
+        background-color: beige;
+        width: 100%;
+        height: 100%;
+    }
+
+    #webgl {
+        margin: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-style: solid;
+        border-width: 8px;
+        border-color: grey;
+    }
+</style>
+
+<body onload="main()">
+    <div id="content">
+        <canvas id="webgl" width="700" height="700"></canvas>
+        <h3>shader uniform基础使用：绘制一个点，颜色随机</h3>
+        <button onclick="randomColor()">random color</button>
+    </div>
+    <script type="text/javascript">
+        var canvas;
+        var gl
+        var v_shader_source = [
+            "void main() {",
+            "  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);",
+            "  gl_PointSize = 30.0;",
+            "}"
+        ].join("\n");
+        var f_shader_source = [
+            "precision mediump float;", // 指定精度，不可缺省
+            "uniform vec4 u_FragColor;",
+            "void main() {",
+            "  gl_FragColor = u_FragColor;",
+            "}"
+        ].join("\n");
+
+        function main() {
+            canvas = document.getElementById('webgl');
+            gl = canvas.getContext('webgl');
+
+            //setup v-shader
+            var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vertexShader, v_shader_source);
+            gl.compileShader(vertexShader);
+
+            //setup f-shader
+            var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fragmentShader, f_shader_source);
+            gl.compileShader(fragmentShader);
+
+            if (!vertexShader || !fragmentShader) {
+                console.log('unable to create shader');
+                return null;
+            }
+
+            //setup program
+            var program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            gl.useProgram(program);
+            gl.program = program;
+
+            // 获取uniform变量存储位置
+            var u_FragColor = gl.getUniformLocation(gl.program, "u_FragColor");
+
+            // 将颜色数据，传递给uniform变量
+            gl.uniform4f(u_FragColor, 0.0, 0.0, 0.0, 1.0);
+
+            gl.drawArrays(gl.PPINTS, 0, 1)
+        }
+
+        function randomColor() {
+            // 获取uniform变量存储位置
+            var u_FragColor = gl.getUniformLocation(gl.program, "u_FragColor");
+
+            // x, y的范围是：0.0～1.0
+            var r = Math.random();
+            var g = Math.random();
+            var b = Math.random();
+
+            // 将颜色数据，传递给uniform变量
+            gl.uniform4f(u_FragColor, r, g, b, 1.0);
+
+            gl.drawArrays(gl.PPINTS, 0, 1)
+        }
+    </script>
+</body>
+
+</html>
